@@ -6,9 +6,9 @@ import (
 	"github.com/fengyuanluo/go-backend-template/internal/server/router"
 )
 
-func TestManagerRoutesRegistered(t *testing.T) {
+func TestManagerHandlersListRoute(t *testing.T) {
 	count := router.GetRouterCount()
-	if count < 8 {
+	if count < 30 {
 		t.Fatalf("expected manager routes, got %d", count)
 	}
 }

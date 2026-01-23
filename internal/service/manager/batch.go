@@ -3,13 +3,13 @@ package manager
 type BatchAction string
 
 type BatchItem struct {
-	Name   string
-	Action BatchAction
+	Name   string      `json:"name"`
+	Action BatchAction `json:"action"`
 }
 
 type BatchResult struct {
-	Name    string
-	Action  BatchAction
-	Success bool
-	Message string
+	Name    string      `json:"name"`
+	Action  BatchAction `json:"action"`
+	Success bool        `json:"success"`
+	Message string      `json:"message,omitempty"`
 }
