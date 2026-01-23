@@ -9,6 +9,7 @@ import (
 	"github.com/fengyuanluo/go-backend-template/internal/db"
 	"github.com/fengyuanluo/go-backend-template/internal/op"
 	_ "github.com/fengyuanluo/go-backend-template/internal/server/handlers"
+	"github.com/fengyuanluo/go-backend-template/internal/server/assets"
 	"github.com/fengyuanluo/go-backend-template/internal/server/middleware"
 	"github.com/fengyuanluo/go-backend-template/internal/server/router"
 	"github.com/fengyuanluo/go-backend-template/internal/utils/log"
@@ -43,7 +44,7 @@ var startCmd = &cobra.Command{
 
 		r.Use(middleware.Cors())
 		r.Use(middleware.Logger())
-		r.Use(middleware.StaticLocal("/", "static"))
+		r.Use(middleware.StaticEmbed("/", assets.StaticFS))
 
 		router.RegisterAll(r)
 
