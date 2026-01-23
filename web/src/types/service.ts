@@ -17,3 +17,21 @@ export interface ServiceDetail extends ServiceSummary {
   user?: string;
   extra?: Record<string, string>;
 }
+
+export interface CreateOptions {
+  start?: boolean;
+  autostart?: boolean;
+}
+
+export interface CreateRequest {
+  name: string;
+  description?: string;
+  exec?: string;
+  workdir?: string;
+  user?: string;
+  env?: string;
+  template_id?: string;
+  raw_text?: string;
+  extra?: Record<string, string>;
+  options?: CreateOptions;
+}

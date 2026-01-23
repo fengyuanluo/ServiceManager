@@ -1,5 +1,5 @@
 import type { ManagerKey } from "../data/navigation";
-import type { ServiceDetail, ServiceStatus, ServiceSummary } from "../types/service";
+import type { CreateRequest, ServiceDetail, ServiceStatus, ServiceSummary } from "../types/service";
 import { request } from "./client";
 
 type ApiServiceSummary = {
@@ -126,5 +126,13 @@ export async function runServiceBatch(manager: ManagerKey, items: BatchItem[], u
 export async function installManager(manager: ManagerKey) {
   return request<InstallResult>(`/${manager}/install`, {
     method: "POST"
+  });
+}
+
+export async function createService(manager: ManagerKey, payload: CreateRequest, user = "") {
+  const query = buildQuery({ user });
+  return request<string>(`/${manager}/create${query}`, {
+    method: "POST",
+    body: JSON.stringify(payload)
   });
 }
