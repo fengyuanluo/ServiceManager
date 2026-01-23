@@ -6,3 +6,4 @@ web/.pnpm/
 web/.vite/
 web/dist/
 web/coverage/
+!web/src/data/

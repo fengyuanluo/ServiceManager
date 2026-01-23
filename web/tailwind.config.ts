@@ -5,13 +5,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "hsl(var(--bg))",
-        fg: "hsl(var(--fg))",
-        card: "hsl(var(--card))",
-        border: "hsl(var(--border))",
-        primary: "hsl(var(--primary))",
-        primaryFg: "hsl(var(--primary-fg))",
-        muted: "hsl(var(--muted))"
+        bg: "hsl(var(--bg) / <alpha-value>)",
+        fg: "hsl(var(--fg) / <alpha-value>)",
+        card: "hsl(var(--card) / <alpha-value>)",
+        border: "hsl(var(--border) / <alpha-value>)",
+        primary: "hsl(var(--primary) / <alpha-value>)",
+        primaryFg: "hsl(var(--primary-fg) / <alpha-value>)",
+        muted: "hsl(var(--muted) / <alpha-value>)"
       }
     }
   },

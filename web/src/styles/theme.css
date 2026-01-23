@@ -10,6 +10,10 @@
   --primary: 222 70% 48%;
   --primary-fg: 0 0% 100%;
   --muted: 210 20% 96%;
+  --font-body: "Source Han Sans SC", "Noto Sans SC", "PingFang SC",
+    "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --font-display: "Songti SC", "STSong", "Noto Serif SC", "Source Han Serif SC",
+    serif;
 }
 
 .theme-white {
@@ -65,4 +69,25 @@
 body {
   background-color: hsl(var(--bg));
   color: hsl(var(--fg));
+  font-family: var(--font-body);
+  letter-spacing: 0.01em;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.shell-bg {
+  background-image: radial-gradient(
+      900px circle at 12% -10%,
+      hsl(var(--muted)),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px circle at 110% 0%,
+      hsl(var(--border)),
+      transparent 55%
+    );
+  background-attachment: fixed;
 }
