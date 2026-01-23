@@ -10,6 +10,7 @@ import {
 import MobileDrawer from "./components/layout/MobileDrawer.vue";
 import SideNav from "./components/layout/SideNav.vue";
 import TopBar from "./components/layout/TopBar.vue";
+import ManagerPanel from "./components/manager/ManagerPanel.vue";
 
 const storageKey = {
   lang: "sm_lang",
@@ -85,34 +86,7 @@ const selectManager = (key: ManagerKey) => {
         />
 
         <main class="flex-1 px-4 py-6 lg:px-8 lg:py-8">
-          <div class="grid gap-6 lg:grid-cols-[360px_1fr]">
-            <section class="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-              <header class="flex items-center justify-between pb-3">
-                <span class="text-[11px] uppercase tracking-[0.35em] text-fg/40">
-                  {{ t("layout.list", lang) }}
-                </span>
-              </header>
-              <div class="space-y-3">
-                <div
-                  v-for="index in 6"
-                  :key="index"
-                  class="h-8 rounded-lg bg-muted/70"
-                ></div>
-              </div>
-            </section>
-
-            <section class="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm">
-              <header class="flex items-center justify-between pb-3">
-                <span class="text-[11px] uppercase tracking-[0.35em] text-fg/40">
-                  {{ t("layout.detail", lang) }}
-                </span>
-              </header>
-              <div class="grid gap-3">
-                <div class="h-44 rounded-xl bg-muted/70"></div>
-                <div class="h-20 rounded-xl bg-muted/60"></div>
-              </div>
-            </section>
-          </div>
+          <ManagerPanel :manager-key="activeManager" :lang="lang" />
         </main>
       </div>
     </div>
