@@ -35,6 +35,9 @@ func GetServiceDetail(manager string, src ExecSource, name string, user string) 
 	if manager == "systemd" {
 		return parseSystemdDetail(string(out), name), nil
 	}
+	if manager == "sysv" {
+		return ParseSysVDetail(string(out), name), nil
+	}
 	if manager == "pm2" {
 		return parsePM2DetailFromList(string(out), name), nil
 	}
@@ -132,7 +135,7 @@ func buildDetailCommand(manager string, name string, user string) (commandSpec, 
 	case "systemd":
 		return commandSpec{
 			Name: "systemctl",
-			Args: []string{"show", name, "--no-pager", "--property=Id,Description,MainPID,ActiveState,ActiveEnterTimestamp,FragmentPath,User"},
+			Args: []string{"show", name, "--no-pager", "--property=Id,Description,MainPID,ActiveState,ActiveEnterTimestamp,FragmentPath,User,ExecStart,UnitFileState"},
 		}, nil
 	case "sysv":
 		return commandSpec{Name: "service", Args: []string{name, "status"}}, nil
@@ -320,6 +323,13 @@ func parseSystemdDetail(out string, fallbackName string) ServiceDetail {
 		parts := strings.SplitN(line, "=", 2)
 		info[parts[0]] = parts[1]
 	}
+	extra := map[string]string{}
+	if exec := strings.TrimSpace(info["ExecStart"]); exec != "" {
+		extra["exec"] = exec
+	}
+	if autostart := strings.TrimSpace(info["UnitFileState"]); autostart != "" {
+		extra["autostart"] = autostart
+	}
 	name := strings.TrimSuffix(info["Id"], ".service")
 	if name == "" {
 		name = fallbackName
@@ -332,6 +342,7 @@ func parseSystemdDetail(out string, fallbackName string) ServiceDetail {
 		UnitPath:    info["FragmentPath"],
 		Description: info["Description"],
 		User:        info["User"],
+		Extra:       extra,
 	}
 }
 

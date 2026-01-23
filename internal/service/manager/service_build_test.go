@@ -43,7 +43,7 @@ func TestBuildDetailCommand(t *testing.T) {
 		wantName string
 		wantArgs []string
 	}{
-		{manager: "systemd", wantName: "systemctl", wantArgs: []string{"show", "ssh", "--no-pager", "--property=Id,Description,MainPID,ActiveState,ActiveEnterTimestamp,FragmentPath,User"}},
+		{manager: "systemd", wantName: "systemctl", wantArgs: []string{"show", "ssh", "--no-pager", "--property=Id,Description,MainPID,ActiveState,ActiveEnterTimestamp,FragmentPath,User,ExecStart,UnitFileState"}},
 		{manager: "sysv", wantName: "service", wantArgs: []string{"ssh", "status"}},
 		{manager: "openrc", wantName: "rc-service", wantArgs: []string{"ssh", "status"}},
 		{manager: "supervisor", wantName: "supervisorctl", wantArgs: []string{"status", "ssh"}},

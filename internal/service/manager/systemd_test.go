@@ -12,3 +12,11 @@ func TestSystemdListParseMulti(t *testing.T) {
 		t.Fatalf("unexpected names")
 	}
 }
+
+func TestParseSystemdDetailExecStart(t *testing.T) {
+	out := "Id=cron.service\nExecStart=/usr/sbin/cron -f\nUnitFileState=enabled\nActiveState=active"
+	detail := parseSystemdDetail(out, "cron")
+	if detail.Extra["exec"] != "/usr/sbin/cron -f" || detail.Extra["autostart"] != "enabled" {
+		t.Fatalf("missing exec/autostart")
+	}
+}
