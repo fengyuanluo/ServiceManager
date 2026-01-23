@@ -1,0 +1,173 @@
+basePath: /api
+definitions:
+  model.UserChangePassword:
+    properties:
+      new_password:
+        type: string
+      old_password:
+        type: string
+    type: object
+  model.UserChangeUsername:
+    properties:
+      new_username:
+        type: string
+    type: object
+  model.UserLogin:
+    properties:
+      expire:
+        type: integer
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  model.UserLoginResponse:
+    properties:
+      expire_at:
+        type: string
+      token:
+        type: string
+    type: object
+  resp.ResponseStruct:
+    properties:
+      code:
+        example: 200
+        type: integer
+      data: {}
+      message:
+        example: success
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Example Service 的 API 文档
+  title: Example Service API
+  version: 0.1.0
+paths:
+  /v1/user/change-password:
+    post:
+      consumes:
+      - application/json
+      description: 需要携带 Authorization 的 Bearer Token
+      parameters:
+      - description: 修改密码参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserChangePassword'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.ResponseStruct'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "401":
+          description: 认证失败
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改密码
+      tags:
+      - 用户
+  /v1/user/change-username:
+    post:
+      consumes:
+      - application/json
+      description: 需要携带 Authorization 的 Bearer Token
+      parameters:
+      - description: 修改用户名参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserChangeUsername'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.ResponseStruct'
+            - properties:
+                data:
+                  type: string
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "401":
+          description: 认证失败
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: 修改用户名
+      tags:
+      - 用户
+  /v1/user/login:
+    post:
+      consumes:
+      - application/json
+      description: 校验用户名密码并返回 JWT
+      parameters:
+      - description: 登录参数
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/model.UserLogin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 成功
+          schema:
+            allOf:
+            - $ref: '#/definitions/resp.ResponseStruct'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.UserLoginResponse'
+              type: object
+        "400":
+          description: 请求参数错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "401":
+          description: 认证失败
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+        "500":
+          description: 服务器错误
+          schema:
+            $ref: '#/definitions/resp.ResponseStruct'
+      summary: 用户登录
+      tags:
+      - 用户
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
