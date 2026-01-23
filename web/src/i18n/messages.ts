@@ -73,6 +73,13 @@ export const messages = {
       extension: "扩展",
       unit: "路径",
       pm2User: "PM2用户"
+    },
+    auth: {
+      title: "登录",
+      username: "用户名",
+      password: "密码",
+      submit: "登录",
+      error: "登录失败"
     }
   },
   en: {
@@ -149,6 +156,13 @@ export const messages = {
       extension: "Extra",
       unit: "Unit",
       pm2User: "PM2 User"
+    },
+    auth: {
+      title: "Sign in",
+      username: "Username",
+      password: "Password",
+      submit: "Sign in",
+      error: "Sign in failed"
     }
   }
 } as const;

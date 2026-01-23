@@ -1,11 +1,14 @@
 import { render, fireEvent } from "@testing-library/vue";
 import { beforeEach, describe, expect, test } from "vitest";
 import App from "../App.vue";
+import { clearToken, setToken } from "../api/client";
 
 describe("app shell", () => {
   beforeEach(() => {
     localStorage.clear();
     document.documentElement.className = "";
+    clearToken();
+    setToken("token-123");
   });
 
   test("toggles language", async () => {

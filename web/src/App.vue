@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
+import { login } from "./api/auth";
+import { useAuthState } from "./api/client";
 import { t, type Lang } from "./i18n";
 import {
   managerNav,
@@ -7,6 +9,7 @@ import {
   type ManagerKey,
   type ThemeId
 } from "./data/navigation";
+import LoginPanel from "./components/auth/LoginPanel.vue";
 import MobileDrawer from "./components/layout/MobileDrawer.vue";
 import SideNav from "./components/layout/SideNav.vue";
 import TopBar from "./components/layout/TopBar.vue";
@@ -40,6 +43,9 @@ const lang = ref<Lang>(isLang(storedLang) ? storedLang : "zh");
 const theme = ref<ThemeId>(isTheme(storedTheme) ? storedTheme : "white");
 const activeManager = ref<ManagerKey>(managerNav[0].key);
 const drawerOpen = ref(false);
+const { isAuthenticated } = useAuthState();
+const loginError = ref("");
+const loginLoading = ref(false);
 
 const themeClass = computed(() => `theme-${theme.value}`);
 const title = computed(() => t("app.title", lang.value));
@@ -58,6 +64,25 @@ const selectManager = (key: ManagerKey) => {
   activeManager.value = key;
   drawerOpen.value = false;
 };
+
+const handleLogin = async (payload: {
+  username: string;
+  password: string;
+  expire: number;
+}) => {
+  loginLoading.value = true;
+  loginError.value = "";
+  try {
+    await login(payload.username, payload.password, payload.expire);
+  } catch (error) {
+    loginError.value =
+      error instanceof Error && error.message
+        ? error.message
+        : t("auth.error", lang.value);
+  } finally {
+    loginLoading.value = false;
+  }
+};
 </script>
 
 <template>
@@ -66,7 +91,19 @@ const selectManager = (key: ManagerKey) => {
     class="shell-bg min-h-screen bg-bg text-fg"
     :class="themeClass"
   >
-    <div class="flex min-h-screen">
+    <LoginPanel
+      v-if="!isAuthenticated"
+      :lang="lang"
+      :themes="themes"
+      :active-theme="theme"
+      :loading="loginLoading"
+      :error="loginError"
+      @toggle-lang="toggleLang"
+      @set-theme="setTheme"
+      @submit="handleLogin"
+    />
+
+    <div v-else class="flex min-h-screen">
       <SideNav
         :items="managerNav"
         :active="activeManager"
@@ -92,6 +129,7 @@ const selectManager = (key: ManagerKey) => {
     </div>
 
     <MobileDrawer
+      v-if="isAuthenticated"
       :open="drawerOpen"
       :items="managerNav"
       :active="activeManager"
