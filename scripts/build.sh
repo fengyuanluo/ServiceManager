@@ -71,6 +71,79 @@ command_exists() {
     command -v "$1" >/dev/null 2>&1
 }
 
+install_command() {
+    local cmd="$1"
+    local pkg="${2:-$1}"
+    local sudo=""
+
+    if [ "$(id -u)" -ne 0 ] && command_exists sudo; then
+        sudo="sudo"
+    fi
+
+    if command_exists apt-get; then
+        ${sudo} apt-get update -y >/dev/null 2>&1 || true
+        ${sudo} apt-get install -y "${pkg}" >/dev/null 2>&1 || return 1
+        return 0
+    fi
+
+    if command_exists apk; then
+        ${sudo} apk add --no-cache "${pkg}" >/dev/null 2>&1 || return 1
+        return 0
+    fi
+
+    log_error "No supported package manager found to install ${pkg}"
+    return 1
+}
+
+prepare_frontend_assets() {
+    if [ ! -d "web" ]; then
+        log_error "web directory not found"
+        return 1
+    fi
+
+    if ! command_exists node; then
+        log_error "Node.js is required to build frontend assets"
+        return 1
+    fi
+
+    if ! command_exists pnpm; then
+        if command_exists corepack; then
+            log_info "pnpm not found, enabling via corepack"
+            corepack enable >/dev/null 2>&1 || true
+            corepack prepare pnpm@9.12.2 --activate >/dev/null 2>&1 || true
+        fi
+    fi
+
+    if ! command_exists pnpm; then
+        log_error "pnpm is not installed. Please install pnpm or enable corepack"
+        return 1
+    fi
+
+    log_step "Building frontend assets"
+    if ! (cd web && pnpm install --frozen-lockfile && pnpm build); then
+        log_error "Frontend build failed"
+        return 1
+    fi
+
+    if [ ! -f "static/index.html" ]; then
+        log_error "Frontend build completed but static/index.html not found"
+        return 1
+    fi
+
+    log_step "Syncing embedded assets"
+    if ! mkdir -p internal/server/assets; then
+        log_error "Failed to create internal/server/assets directory"
+        return 1
+    fi
+    rm -rf internal/server/assets/static
+    if ! cp -R static internal/server/assets/; then
+        log_error "Failed to sync static assets into internal/server/assets/static"
+        return 1
+    fi
+
+    log_success "Frontend assets ready"
+}
+
 prepare_environment() {
     log_step "Preparing build environment"
 
@@ -161,6 +234,10 @@ prepare_environment() {
         return 1
     fi
 
+    if ! prepare_frontend_assets; then
+        return 1
+    fi
+
     log_success "Build environment ready"
 }
 
@@ -194,6 +271,7 @@ build_standard() {
     local output_file="${OUTPUT_DIR}/bin/${APP_NAME}-${os}-${arch}"
 
     log_info "Building ${os}/${arch}..."
+    log_info "Using CGO_ENABLED=0 (pure Go build)"
 
     if ! GOOS="${os}" GOARCH="${go_arch}" CGO_ENABLED=0 \
         go build -o "${output_file}" -ldflags="${LDFLAGS}" -tags=jsoniter "${MAIN_DIR}" 2>&1; then

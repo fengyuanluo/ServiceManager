@@ -23,7 +23,19 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Build
+        env:
+          CGO_ENABLED: "0"
         run: bash scripts/build.sh release
 
       - name: Get latest tag

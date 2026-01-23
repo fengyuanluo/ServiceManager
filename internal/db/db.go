@@ -5,7 +5,7 @@ import (
 
 	"github.com/fengyuanluo/go-backend-template/internal/conf"
 	"github.com/fengyuanluo/go-backend-template/internal/model"
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
