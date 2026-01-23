@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: 0 0% 100%;
+  --fg: 222 20% 12%;
+  --card: 0 0% 100%;
+  --border: 222 10% 90%;
+  --primary: 222 70% 48%;
+  --primary-fg: 0 0% 100%;
+  --muted: 210 20% 96%;
+}
+
+.theme-white {
+  --bg: 0 0% 100%;
+  --fg: 222 20% 12%;
+  --card: 0 0% 100%;
+  --border: 222 10% 90%;
+  --primary: 222 70% 48%;
+  --primary-fg: 0 0% 100%;
+  --muted: 210 20% 96%;
+}
+
+.theme-dark {
+  --bg: 222 20% 8%;
+  --fg: 210 20% 96%;
+  --card: 222 20% 10%;
+  --border: 222 10% 20%;
+  --primary: 210 80% 66%;
+  --primary-fg: 222 20% 10%;
+  --muted: 222 15% 18%;
+}
+
+.theme-pink {
+  --bg: 350 100% 98%;
+  --fg: 222 20% 12%;
+  --card: 350 100% 99%;
+  --border: 350 30% 90%;
+  --primary: 340 70% 55%;
+  --primary-fg: 0 0% 100%;
+  --muted: 350 25% 94%;
+}
+
+.theme-cyan {
+  --bg: 190 60% 98%;
+  --fg: 210 20% 12%;
+  --card: 190 60% 99%;
+  --border: 190 20% 88%;
+  --primary: 190 70% 45%;
+  --primary-fg: 0 0% 100%;
+  --muted: 190 20% 94%;
+}
+
+.theme-paper {
+  --bg: 35 35% 96%;
+  --fg: 30 25% 18%;
+  --card: 35 35% 98%;
+  --border: 32 15% 86%;
+  --primary: 25 45% 40%;
+  --primary-fg: 35 35% 96%;
+  --muted: 35 20% 92%;
+}
+
+body {
+  background-color: hsl(var(--bg));
+  color: hsl(var(--fg));
+}
