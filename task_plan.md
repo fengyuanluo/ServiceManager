@@ -6,8 +6,8 @@
 ## Phases
 - [x] Phase 1: 计划与环境确认
 - [x] Phase 2: 研究与上下文收集
-- [ ] Phase 3: 实现与测试（前端为主）
-- [ ] Phase 4: 深度测试、构建与交付
+- [x] Phase 3: 实现与测试（前端为主）
+- [x] Phase 4: 深度测试、构建与交付
 
 ## Key Questions
 1. 新增向导的步骤结构与字段映射如何与现有服务编辑器复用？
@@ -22,6 +22,8 @@
 - rg 命令不可用，已改用 grep 搜索。
 - Context7 resolve-library-id 失败（TypeError: fetch failed），将使用本地经验作为降级。
 - 设计文档首次写入因反引号被 shell 解析失败，已改为纯文本写入。
+- python 命令不可用，改用 cat 写入测试文件。
+- ServiceCreateWizard 模板字符串被错误写入导致渲染报错，已修复引号缺失问题。
 
 ## Status
-**Currently in Phase 3** - 按计划执行向导与 API 接入实现
+**Currently in Phase 4** - 深度测试与构建完成，准备提交与交付
