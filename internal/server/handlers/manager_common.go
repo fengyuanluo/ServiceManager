@@ -15,6 +15,12 @@ import (
 
 var managerExecSource = manager.ExecSource{}
 var managerEnvSource = manager.EnvSource{ReadFile: os.ReadFile}
+var managerFileSource = manager.FileSource{
+	WriteFile: os.WriteFile,
+	MkdirAll:  os.MkdirAll,
+	Chmod:     os.Chmod,
+}
+var managerCreateBaseDir = ""
 
 type batchRequest struct {
 	Items []manager.BatchItem `json:"items"`
@@ -47,6 +53,10 @@ func registerManagerRoutes(key string) {
 		AddRoute(
 			router.NewRoute("/install", http.MethodPost).
 				Handle(installHandler(key)),
+		).
+		AddRoute(
+			router.NewRoute("/create", http.MethodPost).
+				Handle(createHandler(key)),
 		)
 }
 
@@ -143,5 +153,27 @@ func installHandler(key string) gin.HandlerFunc {
 		env := manager.DetectEnvironment(managerEnvSource)
 		result := manager.InstallManager(key, env, managerExecSource)
 		resp.Success(c, result)
+	}
+}
+
+func createHandler(key string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var payload manager.CreateRequest
+		if err := c.ShouldBindJSON(&payload); err != nil {
+			resp.Error(c, http.StatusBadRequest, resp.ErrInvalidJSON)
+			return
+		}
+		if strings.TrimSpace(payload.User) == "" {
+			payload.User = strings.TrimSpace(c.Query("user"))
+		}
+		if err := manager.CreateService(key, manager.CreateSource{
+			Exec:    managerExecSource,
+			FS:      managerFileSource,
+			BaseDir: managerCreateBaseDir,
+		}, payload); err != nil {
+			resp.Error(c, http.StatusBadRequest, err.Error())
+			return
+		}
+		resp.Success(c, "ok")
 	}
 }

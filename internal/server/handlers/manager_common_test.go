@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/fengyuanluo/go-backend-template/internal/service/manager"
@@ -156,6 +157,38 @@ func TestInstallHandler(t *testing.T) {
 	c.Request.Header.Set("Content-Type", "application/json")
 
 	installHandler("supervisor")(c)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("unexpected status")
+	}
+}
+
+func TestCreateHandler(t *testing.T) {
+	prevExec := managerExecSource
+	prevFS := managerFileSource
+	prevBase := managerCreateBaseDir
+	managerExecSource = manager.ExecSource{Run: func(name string, args ...string) ([]byte, error) {
+		return []byte("ok"), nil
+	}}
+	managerFileSource = manager.FileSource{
+		WriteFile: os.WriteFile,
+		MkdirAll:  os.MkdirAll,
+		Chmod:     os.Chmod,
+	}
+	managerCreateBaseDir = t.TempDir()
+	defer func() {
+		managerExecSource = prevExec
+		managerFileSource = prevFS
+		managerCreateBaseDir = prevBase
+	}()
+
+	body := bytes.NewBufferString(`{"name":"demo","template_id":"simple","exec":"/bin/demo"}`)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/", body)
+	c.Request.Header.Set("Content-Type", "application/json")
+
+	createHandler("systemd")(c)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("unexpected status")
