@@ -1,3 +1,8 @@
 data
 build
 .worktrees
+web/node_modules/
+web/.pnpm/
+web/.vite/
+web/dist/
+web/coverage/
