@@ -1,0 +1,116 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            asset_arch: amd64
+            ext: ""
+          - goos: linux
+            goarch: arm64
+            asset_arch: arm64
+            ext: ""
+          - goos: linux
+            goarch: arm
+            goarm: 7
+            asset_arch: armv7
+            ext: ""
+          - goos: darwin
+            goarch: amd64
+            asset_arch: amd64
+            ext: ""
+          - goos: darwin
+            goarch: arm64
+            asset_arch: arm64
+            ext: ""
+          - goos: windows
+            goarch: amd64
+            asset_arch: amd64
+            ext: ".exe"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "pnpm"
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install frontend deps
+        run: pnpm -C web install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm -C web build
+
+      - name: Build backend
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          GOARM: ${{ matrix.goarm }}
+          CGO_ENABLED: 0
+        run: |
+          set -euo pipefail
+          APP_NAME="service-manager"
+          VERSION="${GITHUB_REF_NAME:-dev}"
+          BUILD_TIME="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          COMMIT="${GITHUB_SHA::7}"
+          AUTHOR="${GITHUB_ACTOR}"
+          REPO="https://github.com/${GITHUB_REPOSITORY}"
+          OUTPUT_DIR="dist"
+          BIN_NAME="${APP_NAME}${{ matrix.ext }}"
+          ARCHIVE_EXT="tar.gz"
+          if [[ "${GOOS}" == "windows" ]]; then
+            ARCHIVE_EXT="zip"
+          fi
+
+          LDFLAGS="-X 'github.com/fengyuanluo/go-backend-template/internal/conf.Version=${VERSION}' \
+            -X 'github.com/fengyuanluo/go-backend-template/internal/conf.Commit=${COMMIT}' \
+            -X 'github.com/fengyuanluo/go-backend-template/internal/conf.BuildTime=${BUILD_TIME}' \
+            -X 'github.com/fengyuanluo/go-backend-template/internal/conf.Author=${AUTHOR}' \
+            -X 'github.com/fengyuanluo/go-backend-template/internal/conf.Repo=${REPO}' \
+            -s -w"
+
+          mkdir -p "${OUTPUT_DIR}"
+          go build -ldflags "${LDFLAGS}" -o "${OUTPUT_DIR}/${BIN_NAME}" .
+
+          ASSET="${APP_NAME}_${VERSION}_${GOOS}_${{ matrix.asset_arch }}.${ARCHIVE_EXT}"
+          if [[ "${ARCHIVE_EXT}" == "zip" ]]; then
+            (cd "${OUTPUT_DIR}" && zip -q "${ASSET}" "${BIN_NAME}")
+          else
+            tar -czf "${OUTPUT_DIR}/${ASSET}" -C "${OUTPUT_DIR}" "${BIN_NAME}"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: service-manager-${{ matrix.goos }}-${{ matrix.asset_arch }}
+          path: dist/service-manager_*.*
