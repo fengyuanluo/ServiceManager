@@ -133,8 +133,39 @@ const serviceDetails: Record<ManagerKey, Record<string, ServiceDetail>> = {
   }
 };
 
+const serviceLogs: Record<ManagerKey, Record<string, string[]>> = {
+  systemd: {
+    sshd: [
+      "[info] sshd started",
+      "[info] key exchange completed",
+      "[warn] invalid user",
+      "[info] session closed"
+    ],
+    nginx: [
+      "[info] worker started",
+      "[info] new connection",
+      "[error] upstream timeout"
+    ]
+  },
+  sysv: {
+    cron: ["[info] cron wakeup", "[info] job executed"]
+  },
+  openrc: {
+    net: ["[info] interface up", "[info] dhcp lease ok"]
+  },
+  supervisor: {
+    app: ["[warn] app stopped", "[info] waiting for restart"]
+  },
+  pm2: {
+    "node-api": ["[info] pm2 online", "[error] restart triggered"]
+  }
+};
+
 export const getServiceSummaries = (manager: ManagerKey) =>
   serviceSummaries[manager] ?? [];
 
 export const getServiceDetail = (manager: ManagerKey, id: string) =>
   serviceDetails[manager]?.[id] ?? null;
+
+export const getServiceLogs = (manager: ManagerKey, id: string) =>
+  serviceLogs[manager]?.[id] ?? [];

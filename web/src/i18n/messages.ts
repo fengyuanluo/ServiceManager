@@ -13,11 +13,26 @@ export const messages = {
     layout: {
       list: "列表",
       detail: "详情",
-      select: "选择服务"
+      select: "选择服务",
+      logs: "日志",
+      edit: "编辑"
+    },
+    batch: {
+      all: "全选",
+      selected: "已选"
     },
     action: {
       menu: "打开菜单",
-      language: "切换语言"
+      language: "切换语言",
+      start: "启动",
+      stop: "停止",
+      restart: "重启",
+      delete: "删除",
+      autostart: "自启",
+      raw: "原始",
+      form: "表单",
+      save: "保存",
+      reset: "重置"
     },
     theme: {
       white: "纯白",
@@ -36,6 +51,28 @@ export const messages = {
       pid: "PID",
       since: "启动时间",
       unit: "路径"
+    },
+    logs: {
+      search: "搜索",
+      limit: "行数",
+      level: "级别",
+      levelAll: "全部",
+      levelInfo: "信息",
+      levelWarn: "警告",
+      levelError: "错误",
+      export: "导出",
+      empty: "暂无日志"
+    },
+    editor: {
+      name: "名称",
+      description: "描述",
+      exec: "执行",
+      workdir: "目录",
+      user: "用户",
+      env: "环境",
+      extension: "扩展",
+      unit: "路径",
+      pm2User: "PM2用户"
     }
   },
   en: {
@@ -52,11 +89,26 @@ export const messages = {
     layout: {
       list: "List",
       detail: "Detail",
-      select: "Select"
+      select: "Select",
+      logs: "Logs",
+      edit: "Edit"
+    },
+    batch: {
+      all: "All",
+      selected: "Selected"
     },
     action: {
       menu: "Open menu",
-      language: "Switch language"
+      language: "Switch language",
+      start: "Start",
+      stop: "Stop",
+      restart: "Restart",
+      delete: "Delete",
+      autostart: "Autostart",
+      raw: "Raw",
+      form: "Form",
+      save: "Save",
+      reset: "Reset"
     },
     theme: {
       white: "White",
@@ -75,6 +127,28 @@ export const messages = {
       pid: "PID",
       since: "Since",
       unit: "Unit"
+    },
+    logs: {
+      search: "Search",
+      limit: "Lines",
+      level: "Level",
+      levelAll: "All",
+      levelInfo: "Info",
+      levelWarn: "Warn",
+      levelError: "Error",
+      export: "Export",
+      empty: "Empty"
+    },
+    editor: {
+      name: "Name",
+      description: "Desc",
+      exec: "Exec",
+      workdir: "Dir",
+      user: "User",
+      env: "Env",
+      extension: "Extra",
+      unit: "Unit",
+      pm2User: "PM2 User"
     }
   }
 } as const;
