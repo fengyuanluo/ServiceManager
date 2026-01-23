@@ -63,6 +63,13 @@ export const messages = {
       export: "导出",
       empty: "暂无日志"
     },
+    install: {
+      missing: "未检测到",
+      action: "安装",
+      installing: "安装中",
+      failed: "失败",
+      confirm: "确认安装该管理器？"
+    },
     editor: {
       name: "名称",
       description: "描述",
@@ -145,6 +152,13 @@ export const messages = {
       levelError: "Error",
       export: "Export",
       empty: "Empty"
+    },
+    install: {
+      missing: "Not detected",
+      action: "Install",
+      installing: "Installing",
+      failed: "Failed",
+      confirm: "Install this manager?"
     },
     editor: {
       name: "Name",

@@ -3,7 +3,8 @@ import { computed, ref, watch } from "vue";
 import { t, type Lang } from "../../i18n";
 import type { ManagerKey } from "../../data/navigation";
 import type { ServiceDetail as ServiceDetailType, ServiceSummary } from "../../types/service";
-import { getServiceDetail, getServiceLogs, listServices, runServiceBatch } from "../../api/services";
+import { ApiError } from "../../api/client";
+import { getServiceDetail, getServiceLogs, installManager, listServices, runServiceBatch } from "../../api/services";
 import BatchToolbar from "./BatchToolbar.vue";
 import ServiceDetail from "./ServiceDetail.vue";
 import ServiceEditor from "./ServiceEditor.vue";
@@ -22,22 +23,34 @@ const services = ref<ServiceSummary[]>([]);
 const detail = ref<ServiceDetailType | null>(null);
 const logs = ref<string[]>([]);
 const pm2User = ref("root");
+const missing = ref(false);
+const installState = ref<"idle" | "installing" | "failed">("idle");
 
 const currentUser = computed(() =>
   props.managerKey === "pm2" ? pm2User.value.trim() || "root" : ""
 );
+const installing = computed(() => installState.value === "installing");
 const allSelected = computed(
   () => services.value.length > 0 && selectedIds.value.length === services.value.length
 );
 
+const isManagerUnavailable = (error: unknown) =>
+  error instanceof ApiError && error.message.toLowerCase().includes("manager unavailable");
+
 const loadList = async () => {
   try {
     services.value = await listServices(props.managerKey, currentUser.value);
+    missing.value = false;
+    installState.value = "idle";
   } catch (error) {
     console.error(error);
     services.value = [];
     detail.value = null;
     logs.value = [];
+    missing.value = isManagerUnavailable(error);
+    if (!missing.value) {
+      installState.value = "idle";
+    }
   }
   const nameSet = new Set(services.value.map((service) => service.name));
   selectedIds.value = selectedIds.value.filter((name) => nameSet.has(name));
@@ -133,6 +146,25 @@ const handleBatchAction = async (action: string) => {
     void loadList();
   }
 };
+
+const handleInstall = async () => {
+  if (installing.value) return;
+  if (typeof window !== "undefined") {
+    const confirmed = window.confirm(t("install.confirm", props.lang));
+    if (!confirmed) return;
+  }
+  installState.value = "installing";
+  try {
+    await installManager(props.managerKey);
+    await loadList();
+    if (missing.value) {
+      installState.value = "failed";
+    }
+  } catch (error) {
+    console.error(error);
+    installState.value = "failed";
+  }
+};
 </script>
 
 <template>
@@ -146,6 +178,29 @@ const handleBatchAction = async (action: string) => {
           {{ services.length }}
         </span>
       </header>
+      <div
+        v-if="missing"
+        data-testid="install-card"
+        class="mb-4 rounded-2xl border border-amber-300/60 bg-amber-200/10 p-3 text-xs text-fg/70 shadow-sm shadow-amber-200/30"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <div class="text-[10px] uppercase tracking-[0.35em] text-amber-700">
+            {{ t("install.missing", props.lang) }}
+          </div>
+          <button
+            data-testid="install-action"
+            type="button"
+            class="rounded-full border border-amber-400/60 bg-amber-200/30 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-amber-700 transition hover:bg-amber-200/50"
+            :disabled="installing"
+            @click="handleInstall"
+          >
+            {{ installing ? t("install.installing", props.lang) : t("install.action", props.lang) }}
+          </button>
+        </div>
+        <div v-if="installState === 'failed'" class="mt-2 text-[10px] uppercase tracking-[0.3em] text-rose-500">
+          {{ t("install.failed", props.lang) }}
+        </div>
+      </div>
       <div v-if="props.managerKey === 'pm2'" class="pb-3">
         <label class="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-fg/40">
           {{ t("editor.user", props.lang) }}
