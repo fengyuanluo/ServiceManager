@@ -1,7 +1,15 @@
 import { render, fireEvent } from "@testing-library/vue";
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, expect, test, vi } from "vitest";
 import App from "../App.vue";
 import { clearToken, setToken } from "../api/client";
+import { listServices } from "../api/services";
+
+vi.mock("../api/services", () => ({
+  listServices: vi.fn(),
+  getServiceDetail: vi.fn(),
+  getServiceLogs: vi.fn(),
+  runServiceBatch: vi.fn()
+}));
 
 describe("app shell", () => {
   beforeEach(() => {
@@ -9,6 +17,7 @@ describe("app shell", () => {
     document.documentElement.className = "";
     clearToken();
     setToken("token-123");
+    vi.mocked(listServices).mockResolvedValue([]);
   });
 
   test("toggles language", async () => {

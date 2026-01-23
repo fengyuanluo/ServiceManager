@@ -34,7 +34,7 @@ const props = defineProps<{
     </div>
 
     <div class="text-sm text-fg/60">
-      {{ props.service.description || props.service.summary }}
+      {{ props.service.description || props.service.detail }}
     </div>
 
     <dl class="grid grid-cols-2 gap-4 text-xs text-fg/60">

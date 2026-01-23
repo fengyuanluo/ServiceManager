@@ -27,7 +27,7 @@ const isPm2 = computed(() => props.managerKey === "pm2");
 const buildRaw = (service: ServiceDetail | null) => {
   if (!service) return "";
   if (props.managerKey === "systemd") {
-    return `[Unit]\nDescription=${service.description ?? service.summary}\n\n[Service]\nExecStart=${form.value.exec || "/usr/sbin/" + service.name}\nUser=${form.value.user}\n\n[Install]\nWantedBy=multi-user.target\n`;
+    return `[Unit]\nDescription=${service.description ?? service.detail ?? ""}\n\n[Service]\nExecStart=${form.value.exec || "/usr/sbin/" + service.name}\nUser=${form.value.user}\n\n[Install]\nWantedBy=multi-user.target\n`;
   }
   if (props.managerKey === "pm2") {
     return `{\n  \"name\": \"${service.name}\",\n  \"script\": \"${form.value.exec || "app.js"}\",\n  \"user\": \"${form.value.user}\"\n}\n`;
@@ -50,10 +50,10 @@ const resetForm = (service: ServiceDetail | null) => {
   }
   form.value = {
     name: service.name,
-    description: service.description ?? service.summary,
+    description: service.description ?? service.detail ?? "",
     exec: "",
     workdir: "/",
-    user: "root",
+    user: service.user || "root",
     env: ""
   };
   rawText.value = buildRaw(service);

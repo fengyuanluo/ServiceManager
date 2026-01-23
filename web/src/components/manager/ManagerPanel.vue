@@ -2,7 +2,8 @@
 import { computed, ref, watch } from "vue";
 import { t, type Lang } from "../../i18n";
 import type { ManagerKey } from "../../data/navigation";
-import { getServiceDetail, getServiceLogs, getServiceSummaries } from "../../data/services";
+import type { ServiceDetail as ServiceDetailType, ServiceSummary } from "../../types/service";
+import { getServiceDetail, getServiceLogs, listServices, runServiceBatch } from "../../api/services";
 import BatchToolbar from "./BatchToolbar.vue";
 import ServiceDetail from "./ServiceDetail.vue";
 import ServiceEditor from "./ServiceEditor.vue";
@@ -17,27 +18,94 @@ const props = defineProps<{
 const selectedId = ref<string | null>(null);
 const selectedIds = ref<string[]>([]);
 
-const services = computed(() => getServiceSummaries(props.managerKey));
-const detail = computed(() =>
-  selectedId.value ? getServiceDetail(props.managerKey, selectedId.value) : null
-);
-const logs = computed(() =>
-  selectedId.value ? getServiceLogs(props.managerKey, selectedId.value) : []
+const services = ref<ServiceSummary[]>([]);
+const detail = ref<ServiceDetailType | null>(null);
+const logs = ref<string[]>([]);
+const pm2User = ref("root");
+
+const currentUser = computed(() =>
+  props.managerKey === "pm2" ? pm2User.value.trim() || "root" : ""
 );
 const allSelected = computed(
   () => services.value.length > 0 && selectedIds.value.length === services.value.length
 );
+
+const loadList = async () => {
+  try {
+    services.value = await listServices(props.managerKey, currentUser.value);
+  } catch (error) {
+    console.error(error);
+    services.value = [];
+    detail.value = null;
+    logs.value = [];
+  }
+  const nameSet = new Set(services.value.map((service) => service.name));
+  selectedIds.value = selectedIds.value.filter((name) => nameSet.has(name));
+  if (selectedId.value && !nameSet.has(selectedId.value)) {
+    selectedId.value = null;
+    detail.value = null;
+    logs.value = [];
+  }
+};
+
+const loadDetail = async (name: string) => {
+  const summary = services.value.find((service) => service.name === name);
+  try {
+    const payload = await getServiceDetail(props.managerKey, name, currentUser.value);
+    if (summary) {
+      detail.value = {
+        ...summary,
+        ...payload,
+        detail: payload.detail ?? summary.detail
+      };
+      return;
+    }
+    detail.value = payload;
+  } catch (error) {
+    console.error(error);
+    detail.value = summary ?? null;
+  }
+};
+
+const loadLogs = async (name: string) => {
+  try {
+    logs.value = await getServiceLogs(props.managerKey, name, {
+      lines: 500,
+      user: currentUser.value
+    });
+  } catch (error) {
+    console.error(error);
+    logs.value = [];
+  }
+};
 
 watch(
   () => props.managerKey,
   () => {
     selectedId.value = null;
     selectedIds.value = [];
-  }
+    detail.value = null;
+    logs.value = [];
+    void loadList();
+  },
+  { immediate: true }
 );
+
+watch(pm2User, () => {
+  if (props.managerKey !== "pm2") return;
+  selectedId.value = null;
+  selectedIds.value = [];
+  detail.value = null;
+  logs.value = [];
+  void loadList();
+});
 
 const selectService = (id: string) => {
   selectedId.value = id;
+  detail.value = null;
+  logs.value = [];
+  void loadDetail(id);
+  void loadLogs(id);
 };
 
 const toggleSelection = (id: string, checked: boolean) => {
@@ -51,11 +119,19 @@ const toggleSelection = (id: string, checked: boolean) => {
 };
 
 const toggleAll = (checked: boolean) => {
-  selectedIds.value = checked ? services.value.map((service) => service.id) : [];
+  selectedIds.value = checked ? services.value.map((service) => service.name) : [];
 };
 
-const handleBatchAction = (_action: string) => {
-  // placeholder for future API integration
+const handleBatchAction = async (action: string) => {
+  if (selectedIds.value.length === 0) return;
+  const items = selectedIds.value.map((name) => ({ name, action }));
+  try {
+    await runServiceBatch(props.managerKey, items, currentUser.value);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    void loadList();
+  }
 };
 </script>
 
@@ -70,6 +146,16 @@ const handleBatchAction = (_action: string) => {
           {{ services.length }}
         </span>
       </header>
+      <div v-if="props.managerKey === 'pm2'" class="pb-3">
+        <label class="flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] text-fg/40">
+          {{ t("editor.user", props.lang) }}
+          <input
+            v-model="pm2User"
+            type="text"
+            class="h-7 w-full rounded-full border border-border/70 bg-card/70 px-3 text-[11px] normal-case tracking-normal text-fg/70"
+          />
+        </label>
+      </div>
       <BatchToolbar
         :selected-count="selectedIds.length"
         :total-count="services.length"

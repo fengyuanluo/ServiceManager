@@ -4,10 +4,9 @@ import ServiceEditor from "../components/manager/ServiceEditor.vue";
 import type { ServiceDetail } from "../types/service";
 
 const sampleService: ServiceDetail = {
-  id: "sshd",
   name: "sshd",
   status: "running",
-  summary: "Secure Shell",
+  detail: "Secure Shell",
   manager: "systemd",
   description: "OpenSSH",
   unitPath: "/lib/systemd/system/ssh.service"
