@@ -14,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: "toggle-all", checked: boolean): void;
   (event: "action", action: BatchAction): void;
+  (event: "create"): void;
 }>();
 
 const disabled = computed(() => props.selectedCount === 0);
@@ -35,6 +36,10 @@ const runAction = (action: BatchAction) => {
   if (disabled.value) return;
   emit("action", action);
 };
+
+const openCreate = () => {
+  emit("create");
+};
 </script>
 
 <template>
@@ -53,6 +58,14 @@ const runAction = (action: BatchAction) => {
       <span>{{ props.selectedCount }} / {{ props.totalCount }} {{ t("batch.selected", props.lang) }}</span>
     </div>
     <div class="flex flex-wrap gap-2">
+      <button
+        data-testid="create-service"
+        type="button"
+        class="rounded-full border border-primary/60 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-primary transition hover:bg-primary/20"
+        @click="openCreate"
+      >
+        {{ t("action.create", props.lang) }}
+      </button>
       <button
         v-for="action in actions"
         :key="action.id"

@@ -24,6 +24,7 @@ export const messages = {
     action: {
       menu: "打开菜单",
       language: "切换语言",
+      create: "新增",
       start: "启动",
       stop: "停止",
       restart: "重启",
@@ -31,8 +32,27 @@ export const messages = {
       autostart: "自启",
       raw: "原始",
       form: "表单",
+      close: "关闭",
       save: "保存",
       reset: "重置"
+    },
+    create: {
+      title: "新增服务",
+      placeholder: "填写信息",
+      submitting: "创建中",
+      failed: "创建失败",
+      section: {
+        template: "模板",
+        selected: "已选",
+        form: "表单",
+        raw: "原始",
+        options: "选项"
+      },
+      step: {
+        template: "模板",
+        form: "配置",
+        confirm: "确认"
+      }
     },
     theme: {
       white: "纯白",
@@ -114,6 +134,7 @@ export const messages = {
     action: {
       menu: "Open menu",
       language: "Switch language",
+      create: "Create",
       start: "Start",
       stop: "Stop",
       restart: "Restart",
@@ -121,8 +142,27 @@ export const messages = {
       autostart: "Autostart",
       raw: "Raw",
       form: "Form",
+      close: "Close",
       save: "Save",
       reset: "Reset"
+    },
+    create: {
+      title: "Create Service",
+      placeholder: "Fill in",
+      submitting: "Creating",
+      failed: "Create failed",
+      section: {
+        template: "Template",
+        selected: "Selected",
+        form: "Form",
+        raw: "Raw",
+        options: "Options"
+      },
+      step: {
+        template: "Template",
+        form: "Config",
+        confirm: "Confirm"
+      }
     },
     theme: {
       white: "White",

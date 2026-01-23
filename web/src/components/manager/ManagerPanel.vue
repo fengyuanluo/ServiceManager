@@ -2,10 +2,18 @@
 import { computed, ref, watch } from "vue";
 import { t, type Lang } from "../../i18n";
 import type { ManagerKey } from "../../data/navigation";
-import type { ServiceDetail as ServiceDetailType, ServiceSummary } from "../../types/service";
+import type { CreateRequest, ServiceDetail as ServiceDetailType, ServiceSummary } from "../../types/service";
 import { ApiError } from "../../api/client";
-import { getServiceDetail, getServiceLogs, installManager, listServices, runServiceBatch } from "../../api/services";
+import {
+  createService,
+  getServiceDetail,
+  getServiceLogs,
+  installManager,
+  listServices,
+  runServiceBatch
+} from "../../api/services";
 import BatchToolbar from "./BatchToolbar.vue";
+import ServiceCreateWizard from "./ServiceCreateWizard.vue";
 import ServiceDetail from "./ServiceDetail.vue";
 import ServiceEditor from "./ServiceEditor.vue";
 import ServiceList from "./ServiceList.vue";
@@ -18,6 +26,7 @@ const props = defineProps<{
 
 const selectedId = ref<string | null>(null);
 const selectedIds = ref<string[]>([]);
+const createOpen = ref(false);
 
 const services = ref<ServiceSummary[]>([]);
 const detail = ref<ServiceDetailType | null>(null);
@@ -25,6 +34,8 @@ const logs = ref<string[]>([]);
 const pm2User = ref("root");
 const missing = ref(false);
 const installState = ref<"idle" | "installing" | "failed">("idle");
+const createSubmitting = ref(false);
+const createError = ref("");
 
 const currentUser = computed(() =>
   props.managerKey === "pm2" ? pm2User.value.trim() || "root" : ""
@@ -99,6 +110,8 @@ watch(
     selectedIds.value = [];
     detail.value = null;
     logs.value = [];
+    createOpen.value = false;
+    createError.value = "";
     void loadList();
   },
   { immediate: true }
@@ -110,6 +123,8 @@ watch(pm2User, () => {
   selectedIds.value = [];
   detail.value = null;
   logs.value = [];
+  createOpen.value = false;
+  createError.value = "";
   void loadList();
 });
 
@@ -144,6 +159,35 @@ const handleBatchAction = async (action: string) => {
     console.error(error);
   } finally {
     void loadList();
+  }
+};
+
+const openCreate = () => {
+  createError.value = "";
+  createOpen.value = true;
+};
+
+const closeCreate = () => {
+  createOpen.value = false;
+  createError.value = "";
+};
+
+const handleCreate = async (payload: CreateRequest) => {
+  if (createSubmitting.value) return;
+  createSubmitting.value = true;
+  createError.value = "";
+  try {
+    await createService(props.managerKey, payload, currentUser.value);
+    await loadList();
+    if (payload.name) {
+      selectService(payload.name);
+    }
+    createOpen.value = false;
+  } catch (error) {
+    console.error(error);
+    createError.value = t("create.failed", props.lang);
+  } finally {
+    createSubmitting.value = false;
   }
 };
 
@@ -218,6 +262,7 @@ const handleInstall = async () => {
         :lang="props.lang"
         @toggle-all="toggleAll"
         @action="handleBatchAction"
+        @create="openCreate"
       />
       <ServiceList
         :services="services"
@@ -245,4 +290,14 @@ const handleInstall = async () => {
       </div>
     </section>
   </div>
+
+  <ServiceCreateWizard
+    :open="createOpen"
+    :lang="props.lang"
+    :manager-key="props.managerKey"
+    :submitting="createSubmitting"
+    :error="createError"
+    @close="closeCreate"
+    @submit="handleCreate"
+  />
 </template>
