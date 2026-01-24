@@ -19,17 +19,45 @@ import (
 )
 
 var cfgFile string
+var registerRoutes = router.RegisterAll
+var initDB = db.InitDB
+var closeDB = db.Close
+var initUser = op.UserInit
+
+func initializeApp() error {
+	if err := initDB(); err != nil {
+		return err
+	}
+	if err := initUser(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func setupRouter() (*gin.Engine, error) {
+	r := gin.New()
+	r.Use(middleware.Cors())
+	r.Use(middleware.Logger())
+	r.Use(middleware.StaticEmbed("/", assets.StaticFS))
+	if err := registerRoutes(r); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
 
 var startCmd = &cobra.Command{
 	Use:   "start",
 	Short: "Start " + conf.APP_NAME,
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
 		conf.PrintBanner()
-		conf.Load(cfgFile)
+		if err := conf.Load(cfgFile); err != nil {
+			return err
+		}
+		log.SetLevel(conf.AppConfig.Log.Level)
+		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		sd := shutdown.New(log.Logger)
-		defer sd.Listen()
 
 		if conf.IsDebug() {
 			gin.SetMode(gin.DebugMode)
@@ -40,13 +68,17 @@ var startCmd = &cobra.Command{
 		docs.SwaggerInfo.Host = fmt.Sprintf("%s:%d", conf.AppConfig.Server.Host, conf.AppConfig.Server.Port)
 		docs.SwaggerInfo.BasePath = "/api"
 
-		r := gin.New()
+		if err := initializeApp(); err != nil {
+			log.Errorf("app init error: %v", err)
+			return
+		}
+		sd.Register(closeDB)
 
-		r.Use(middleware.Cors())
-		r.Use(middleware.Logger())
-		r.Use(middleware.StaticEmbed("/", assets.StaticFS))
-
-		router.RegisterAll(r)
+		r, err := setupRouter()
+		if err != nil {
+			log.Errorf("router init error: %v", err)
+			return
+		}
 
 		httpSrv := &http.Server{Addr: fmt.Sprintf("%s:%d", conf.AppConfig.Server.Host, conf.AppConfig.Server.Port), Handler: r}
 		go func() {
@@ -55,17 +87,7 @@ var startCmd = &cobra.Command{
 			}
 		}()
 		sd.Register(httpSrv.Close)
-
-		if err := db.InitDB(); err != nil {
-			log.Errorf("database init error: %v", err)
-			return
-		}
-		sd.Register(db.Close)
-
-		if err := op.UserInit(); err != nil {
-			log.Errorf("user init error: %v", err)
-			return
-		}
+		sd.Listen()
 	},
 }
 
