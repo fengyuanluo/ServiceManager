@@ -9,23 +9,23 @@ import (
 )
 
 type Server struct {
-	Host string `json:"host"`
-	Port int    `json:"port"`
+	Host string `json:"host" mapstructure:"host"`
+	Port int    `json:"port" mapstructure:"port"`
 }
 
 type Log struct {
-	Level string `json:"level"`
+	Level string `json:"level" mapstructure:"level"`
 }
 
 type Database struct {
-	Type string `json:"type"`
-	Path string `json:"path"`
+	Type string `json:"type" mapstructure:"type"`
+	Path string `json:"path" mapstructure:"path"`
 }
 
 type Config struct {
-	Server   Server
-	Log      Log
-	Database Database
+	Server   Server   `mapstructure:"server"`
+	Log      Log      `mapstructure:"logging"`
+	Database Database `mapstructure:"database"`
 }
 
 var AppConfig Config
