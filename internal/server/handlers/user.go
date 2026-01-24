@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/fengyuanluo/go-backend-template/internal/model"
@@ -10,6 +11,12 @@ import (
 	"github.com/fengyuanluo/go-backend-template/internal/server/resp"
 	"github.com/fengyuanluo/go-backend-template/internal/server/router"
 	"github.com/gin-gonic/gin"
+)
+
+var (
+	userVerify         = op.UserVerify
+	userChangePassword = op.UserChangePassword
+	userChangeUsername = op.UserChangeUsername
 )
 
 func init() {
@@ -47,7 +54,7 @@ func login(c *gin.Context) {
 		resp.Error(c, http.StatusBadRequest, resp.ErrInvalidJSON)
 		return
 	}
-	if err := op.UserVerify(user.Username, user.Password); err != nil {
+	if err := userVerify(user.Username, user.Password); err != nil {
 		resp.Error(c, http.StatusUnauthorized, resp.ErrUnauthorized)
 		return
 	}
@@ -77,7 +84,11 @@ func changePassword(c *gin.Context) {
 		resp.Error(c, http.StatusBadRequest, resp.ErrInvalidJSON)
 		return
 	}
-	if err := op.UserChangePassword(user.OldPassword, user.NewPassword); err != nil {
+	if err := userChangePassword(user.OldPassword, user.NewPassword); err != nil {
+		if errors.Is(err, op.ErrInvalidOldPassword) {
+			resp.Error(c, http.StatusUnauthorized, resp.ErrUnauthorized)
+			return
+		}
 		resp.Error(c, http.StatusInternalServerError, resp.ErrDatabase)
 		return
 	}
@@ -102,7 +113,11 @@ func changeUsername(c *gin.Context) {
 		resp.Error(c, http.StatusBadRequest, resp.ErrInvalidJSON)
 		return
 	}
-	if err := op.UserChangeUsername(user.NewUsername); err != nil {
+	if err := userChangeUsername(user.NewUsername); err != nil {
+		if errors.Is(err, op.ErrInvalidUsername) {
+			resp.Error(c, http.StatusBadRequest, resp.ErrValidation)
+			return
+		}
 		resp.Error(c, http.StatusInternalServerError, resp.ErrDatabase)
 		return
 	}

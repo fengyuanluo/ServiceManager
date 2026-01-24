@@ -30,6 +30,11 @@ var (
 	}
 )
 
+var (
+	ErrInvalidOldPassword = errors.New("invalid old password")
+	ErrInvalidUsername    = errors.New("invalid username")
+)
+
 func initialCredentials() (string, string, bool, error) {
 	prefix := strings.ToUpper(conf.APP_NAME)
 	user := strings.TrimSpace(os.Getenv(prefix + "_INIT_USER"))
@@ -88,7 +93,7 @@ func UserChangePassword(oldPassword, newPassword string) error {
 	userMu.Lock()
 	defer userMu.Unlock()
 	if err := userCache.ComparePassword(oldPassword); err != nil {
-		return fmt.Errorf("incorrect old password: %w", err)
+		return fmt.Errorf("incorrect old password: %w", ErrInvalidOldPassword)
 	}
 
 	userCache.Password = newPassword
@@ -107,7 +112,7 @@ func UserChangeUsername(newUsername string) error {
 	userMu.Lock()
 	defer userMu.Unlock()
 	if userCache.Username == newUsername {
-		return fmt.Errorf("new username is the same as the old username")
+		return fmt.Errorf("new username is the same as the old username: %w", ErrInvalidUsername)
 	}
 	userCache.Username = newUsername
 	if err := db.GetDB().Model(&userCache).Update("username", userCache.Username).Error; err != nil {

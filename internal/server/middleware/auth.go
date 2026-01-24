@@ -11,13 +11,19 @@ import (
 
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token := c.GetHeader("Authorization")
+		token := strings.TrimSpace(c.GetHeader("Authorization"))
 		if token == "" {
-			resp.Error(c, http.StatusBadRequest, resp.ErrBadRequest)
+			resp.Error(c, http.StatusUnauthorized, resp.ErrUnauthorized)
 			c.Abort()
 			return
 		}
-		if !auth.VerifyToken(strings.TrimPrefix(token, "Bearer ")) {
+		parts := strings.Fields(token)
+		if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") || strings.TrimSpace(parts[1]) == "" {
+			resp.Error(c, http.StatusUnauthorized, resp.ErrUnauthorized)
+			c.Abort()
+			return
+		}
+		if !auth.VerifyToken(parts[1]) {
 			resp.Error(c, http.StatusUnauthorized, resp.ErrUnauthorized)
 			c.Abort()
 			return
