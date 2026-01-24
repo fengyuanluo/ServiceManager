@@ -35,9 +35,11 @@ describe("service create wizard", () => {
     });
 
     await fireEvent.click(getByTestId("create-service"));
+    await fireEvent.click(getByTestId("create-next"));
     await fireEvent.update(getByTestId("create-name"), "demo");
     await fireEvent.update(getByTestId("create-exec"), "/usr/bin/demo");
-    await fireEvent.click(getByTestId("create-submit"));
+    await fireEvent.click(getByTestId("create-next"));
+    await fireEvent.click(getByTestId("create-confirm"));
 
     await waitFor(() => {
       expect(mockCreate).toHaveBeenCalledWith(

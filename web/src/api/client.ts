@@ -63,6 +63,9 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
   });
 
   const rawText = await response.text();
+  if (!rawText && response.ok) {
+    return undefined as T;
+  }
   let payload: ApiResponse<T> | null = null;
   if (rawText) {
     try {
@@ -72,11 +75,14 @@ export async function request<T>(path: string, options: RequestOptions = {}) {
     }
   }
 
-  if (!response.ok || payload?.code !== 200) {
+  if (!response.ok) {
     if (response.status === 401) {
       clearToken();
     }
     throw new ApiError(payload?.message ?? response.statusText, response.status, payload?.code ?? response.status);
+  }
+  if (payload && payload.code !== 200) {
+    throw new ApiError(payload.message ?? response.statusText, response.status, payload.code);
   }
 
   return payload?.data as T;

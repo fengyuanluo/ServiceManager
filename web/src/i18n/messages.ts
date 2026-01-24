@@ -34,7 +34,9 @@ export const messages = {
       form: "表单",
       close: "关闭",
       save: "保存",
-      reset: "重置"
+      reset: "重置",
+      next: "下一步",
+      back: "上一步"
     },
     create: {
       title: "新增服务",
@@ -144,7 +146,9 @@ export const messages = {
       form: "Form",
       close: "Close",
       save: "Save",
-      reset: "Reset"
+      reset: "Reset",
+      next: "Next",
+      back: "Back"
     },
     create: {
       title: "Create Service",

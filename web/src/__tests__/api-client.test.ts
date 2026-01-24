@@ -25,4 +25,17 @@ describe("api client", () => {
       : new Headers(options.headers);
     expect(headers.get("Authorization")).toBe("Bearer token-123");
   });
+
+  test("handles empty response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      text: async () => ""
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const result = await request("/systemd/list");
+
+    expect(result).toBeUndefined();
+  });
 });

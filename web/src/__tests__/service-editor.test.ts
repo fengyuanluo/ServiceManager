@@ -26,4 +26,20 @@ describe("service editor", () => {
     await fireEvent.click(getByTestId("toggle-raw"));
     expect(getByTestId("editor-raw")).toBeTruthy();
   });
+
+  test("resets form values", async () => {
+    const { getByTestId } = render(ServiceEditor, {
+      props: {
+        service: sampleService,
+        managerKey: "systemd",
+        lang: "zh"
+      }
+    });
+
+    const description = getByTestId("editor-description") as HTMLInputElement;
+    await fireEvent.update(description, "Changed");
+    await fireEvent.click(getByTestId("editor-reset"));
+
+    expect(description.value).toBe("OpenSSH");
+  });
 });

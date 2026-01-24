@@ -36,9 +36,12 @@ const form = ref({
 const options = ref({ start: false, autostart: false });
 
 const templateLabel = computed(() => t(`nav.${props.managerKey}`, props.lang));
-const activeStep = computed(() => "form");
+const activeStep = ref<"template" | "form" | "confirm">("template");
 const submitting = computed(() => props.submitting === true);
 const canSubmit = computed(() => form.value.name.trim().length > 0 && !submitting.value);
+const inTemplate = computed(() => activeStep.value === "template");
+const inForm = computed(() => activeStep.value === "form");
+const inConfirm = computed(() => activeStep.value === "confirm");
 
 const resetForm = () => {
   form.value = {
@@ -52,6 +55,7 @@ const resetForm = () => {
   options.value = { start: false, autostart: false };
   rawText.value = "";
   mode.value = "form";
+  activeStep.value = "template";
 };
 
 watch(
@@ -64,6 +68,7 @@ watch(
 );
 
 const toggleMode = () => {
+  if (!inForm.value) return;
   mode.value = mode.value === "form" ? "raw" : "form";
 };
 
@@ -100,6 +105,28 @@ const submit = () => {
   if (!canSubmit.value) return;
   emit("submit", buildPayload());
 };
+
+const nextStep = () => {
+  if (inTemplate.value) {
+    activeStep.value = "form";
+    return;
+  }
+  if (inForm.value && canSubmit.value) {
+    activeStep.value = "confirm";
+  }
+};
+
+const prevStep = () => {
+  if (inConfirm.value) {
+    activeStep.value = "form";
+    return;
+  }
+  if (inForm.value) {
+    activeStep.value = "template";
+  }
+};
+
+const preview = computed(() => buildPayload());
 </script>
 
 <template>
@@ -129,6 +156,7 @@ const submit = () => {
             type="button"
             class="rounded-full border border-border/70 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-fg/70 transition hover:text-fg"
             @click="toggleMode"
+            v-if="inForm"
           >
             {{ mode === "form" ? t("action.raw", props.lang) : t("action.form", props.lang) }}
           </button>
@@ -172,7 +200,7 @@ const submit = () => {
         </div>
       </section>
 
-      <section class="mt-6 space-y-4" v-if="mode === 'form'">
+      <section class="mt-6 space-y-4" v-if="inForm && mode === 'form'">
         <div class="text-[10px] uppercase tracking-[0.35em] text-fg/40">
           {{ t("create.section.form", props.lang) }}
         </div>
@@ -257,7 +285,7 @@ const submit = () => {
         </label>
       </section>
 
-      <section class="mt-6 space-y-4" v-else>
+      <section class="mt-6 space-y-4" v-else-if="inForm">
         <div class="text-[10px] uppercase tracking-[0.35em] text-fg/40">
           {{ t("create.section.raw", props.lang) }}
         </div>
@@ -270,7 +298,7 @@ const submit = () => {
         ></textarea>
       </section>
 
-      <section class="mt-6 space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+      <section class="mt-6 space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4" v-if="inForm">
         <div class="text-[10px] uppercase tracking-[0.35em] text-fg/40">
           {{ t("create.section.options", props.lang) }}
         </div>
@@ -302,6 +330,69 @@ const submit = () => {
         </div>
       </section>
 
+      <section v-if="inConfirm" class="mt-6 space-y-3 rounded-2xl border border-border/60 bg-card/60 p-4">
+        <div class="text-[10px] uppercase tracking-[0.35em] text-fg/40">
+          {{ t("create.step.confirm", props.lang) }}
+        </div>
+        <div class="grid gap-3 text-xs text-fg/60 sm:grid-cols-2">
+          <div>
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.name", props.lang) }}
+            </div>
+            <div class="mt-1">{{ preview.name || "-" }}</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.user", props.lang) }}
+            </div>
+            <div class="mt-1">{{ preview.user || "root" }}</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.exec", props.lang) }}
+            </div>
+            <div class="mt-1 break-all">{{ preview.exec || "-" }}</div>
+          </div>
+          <div>
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.workdir", props.lang) }}
+            </div>
+            <div class="mt-1 break-all">{{ preview.workdir || "-" }}</div>
+          </div>
+          <div v-if="preview.description">
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.description", props.lang) }}
+            </div>
+            <div class="mt-1 break-all">{{ preview.description }}</div>
+          </div>
+          <div v-if="preview.env">
+            <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+              {{ t("editor.env", props.lang) }}
+            </div>
+            <div class="mt-1 whitespace-pre-line break-all">{{ preview.env }}</div>
+          </div>
+        </div>
+        <div v-if="mode === 'raw' && preview.raw_text" class="mt-4">
+          <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+            {{ t("create.section.raw", props.lang) }}
+          </div>
+          <pre class="mt-2 whitespace-pre-wrap break-all rounded-xl border border-border/60 bg-card/70 p-3 text-xs text-fg/70">
+{{ preview.raw_text }}
+          </pre>
+        </div>
+        <div class="mt-4 flex flex-wrap items-center gap-4 text-xs text-fg/60">
+          <div class="text-[10px] uppercase tracking-[0.3em] text-fg/40">
+            {{ t("create.section.options", props.lang) }}
+          </div>
+          <div>
+            {{ t("action.start", props.lang) }}: {{ preview.options?.start ? "on" : "off" }}
+          </div>
+          <div>
+            {{ t("action.autostart", props.lang) }}: {{ preview.options?.autostart ? "on" : "off" }}
+          </div>
+        </div>
+      </section>
+
       <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
         <div v-if="props.error" class="text-xs text-rose-500">
           {{ props.error }}
@@ -316,7 +407,28 @@ const submit = () => {
             {{ t("action.close", props.lang) }}
           </button>
           <button
-            data-testid="create-submit"
+            v-if="!inTemplate"
+            data-testid="create-back"
+            type="button"
+            class="rounded-full border border-border/70 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-fg/70 transition hover:text-fg"
+            :disabled="submitting"
+            @click="prevStep"
+          >
+            {{ t("action.back", props.lang) }}
+          </button>
+          <button
+            v-if="inTemplate || inForm"
+            data-testid="create-next"
+            type="button"
+            class="rounded-full border border-primary/60 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+            :disabled="inForm ? !canSubmit : submitting"
+            @click="nextStep"
+          >
+            {{ t("action.next", props.lang) }}
+          </button>
+          <button
+            v-if="inConfirm"
+            data-testid="create-confirm"
             type="button"
             class="rounded-full border border-primary/60 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
             :disabled="!canSubmit"

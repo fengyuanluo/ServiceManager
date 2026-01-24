@@ -131,6 +131,7 @@ const toggleMode = () => {
             v-model="form.description"
             type="text"
             class="w-full rounded-xl border border-border/60 bg-card/70 px-3 py-2 text-sm"
+            data-testid="editor-description"
           />
         </label>
         <div class="grid gap-3 md:grid-cols-2">
@@ -190,17 +191,24 @@ const toggleMode = () => {
 
         <div class="flex justify-end gap-2">
           <button
+            data-testid="editor-reset"
             type="button"
             class="rounded-full border border-border/70 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-fg/70 transition hover:text-fg"
+            @click="resetForm(props.service)"
           >
             {{ t("action.reset", props.lang) }}
           </button>
           <button
+            data-testid="editor-save"
             type="button"
-            class="rounded-full border border-primary/60 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-primary transition hover:bg-primary/20"
+            class="rounded-full border border-primary/60 bg-primary/10 px-3 py-1 text-[11px] uppercase tracking-[0.3em] text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled
           >
             {{ t("action.save", props.lang) }}
           </button>
+        </div>
+        <div class="text-right text-[10px] uppercase tracking-[0.3em] text-fg/40">
+          保存功能暂未开放
         </div>
       </div>
 
