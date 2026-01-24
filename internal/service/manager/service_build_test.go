@@ -2,6 +2,7 @@ package manager
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -17,7 +18,7 @@ func TestBuildListCommand(t *testing.T) {
 		{manager: "openrc", wantName: "rc-service", wantArgs: []string{"--status-all"}},
 		{manager: "supervisor", wantName: "supervisorctl", wantArgs: []string{"status"}},
 		{manager: "pm2", wantName: "pm2", wantArgs: []string{"jlist"}},
-		{manager: "pm2", user: "app", wantName: "su", wantArgs: []string{"-l", "app", "-c", "pm2 jlist"}},
+		{manager: "pm2", user: "app", wantName: "su", wantArgs: []string{"-l", "app", "-c", "pm2 'jlist'"}},
 	}
 	for _, item := range cases {
 		cmd, err := buildListCommand(item.manager, item.user)
@@ -47,7 +48,7 @@ func TestBuildDetailCommand(t *testing.T) {
 		{manager: "sysv", wantName: "service", wantArgs: []string{"ssh", "status"}},
 		{manager: "openrc", wantName: "rc-service", wantArgs: []string{"ssh", "status"}},
 		{manager: "supervisor", wantName: "supervisorctl", wantArgs: []string{"status", "ssh"}},
-		{manager: "pm2", user: "app", wantName: "su", wantArgs: []string{"-l", "app", "-c", "pm2 jlist"}},
+		{manager: "pm2", user: "app", wantName: "su", wantArgs: []string{"-l", "app", "-c", "pm2 'jlist'"}},
 	}
 	for _, item := range cases {
 		cmd, err := buildDetailCommand(item.manager, "ssh", item.user)
@@ -87,7 +88,7 @@ func TestBuildLogsCommand(t *testing.T) {
 	if err != nil || cmd.Name != "su" {
 		t.Fatalf("unexpected pm2 logs command")
 	}
-	if !reflect.DeepEqual(cmd.Args, []string{"-l", "node", "-c", "pm2 logs api --lines 10 --nostream"}) {
+	if !reflect.DeepEqual(cmd.Args, []string{"-l", "node", "-c", "pm2 'logs' 'api' '--lines' '10' '--nostream'"}) {
 		t.Fatalf("unexpected pm2 args: %v", cmd.Args)
 	}
 
@@ -107,8 +108,8 @@ func TestBuildActionCommands(t *testing.T) {
 		{manager: "sysv", req: ActionRequest{Name: "ssh", Action: "delete"}, wantName: "update-rc.d", wantArgs: []string{"-f", "ssh", "remove"}},
 		{manager: "openrc", req: ActionRequest{Name: "ssh", Action: "disable"}, wantName: "rc-update", wantArgs: []string{"del", "ssh", "default"}},
 		{manager: "supervisor", req: ActionRequest{Name: "app", Action: "delete"}, wantName: "supervisorctl", wantArgs: []string{"remove", "app"}},
-		{manager: "pm2", req: ActionRequest{Name: "app", Action: "restart", User: "node"}, wantName: "su", wantArgs: []string{"-l", "node", "-c", "pm2 restart app"}},
-		{manager: "pm2", req: ActionRequest{Action: "autostart", User: "node"}, wantName: "su", wantArgs: []string{"-l", "node", "-c", "pm2 save"}},
+		{manager: "pm2", req: ActionRequest{Name: "app", Action: "restart", User: "node"}, wantName: "su", wantArgs: []string{"-l", "node", "-c", "pm2 'restart' 'app'"}},
+		{manager: "pm2", req: ActionRequest{Action: "autostart", User: "node"}, wantName: "su", wantArgs: []string{"-l", "node", "-c", "pm2 'save'"}},
 	}
 
 	for _, item := range cases {
@@ -163,6 +164,17 @@ func TestBuildInstallCommands(t *testing.T) {
 	}
 	if _, err := buildApkInstall("unknown"); err == nil {
 		t.Fatalf("expected error for unsupported apk manager")
+	}
+}
+
+func TestBuildPM2CommandEscapesArgs(t *testing.T) {
+	cmd, err := buildPM2Command("app", "restart", "demo; rm -rf /")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	joined := strings.Join(cmd.Args, " ")
+	if !strings.Contains(joined, "'demo; rm -rf /'") {
+		t.Fatalf("expected escaped args, got %q", joined)
 	}
 }
 

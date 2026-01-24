@@ -10,9 +10,11 @@ import (
 )
 
 func CreateService(manager string, src CreateSource, req CreateRequest) error {
-	if strings.TrimSpace(req.Name) == "" {
-		return errors.New("missing name")
+	name := strings.TrimSpace(req.Name)
+	if err := validateServiceName(name); err != nil {
+		return err
 	}
+	req.Name = name
 	content, err := renderCreateContent(manager, req)
 	if err != nil {
 		return err
@@ -36,6 +38,36 @@ func CreateService(manager string, src CreateSource, req CreateRequest) error {
 		}
 	}
 	return runCreateCommands(manager, src.Exec, req, path)
+}
+
+func validateServiceName(name string) error {
+	if strings.TrimSpace(name) == "" {
+		return errors.New("missing name")
+	}
+	if strings.Contains(name, "..") || strings.Contains(name, "/") || strings.Contains(name, "\\") {
+		return errors.New("invalid service name")
+	}
+	if strings.Contains(name, " ") {
+		return errors.New("invalid service name")
+	}
+	for _, ch := range name {
+		if ch >= 'a' && ch <= 'z' {
+			continue
+		}
+		if ch >= 'A' && ch <= 'Z' {
+			continue
+		}
+		if ch >= '0' && ch <= '9' {
+			continue
+		}
+		switch ch {
+		case '.', '_', '-':
+			continue
+		default:
+			return errors.New("invalid service name")
+		}
+	}
+	return nil
 }
 
 func normalizeFileSource(fs FileSource) FileSource {
@@ -130,23 +162,23 @@ func renderCreateContent(manager string, req CreateRequest) (string, error) {
 }
 
 func renderSystemd(req CreateRequest) string {
-	desc := req.Description
+	desc := sanitizeLine(req.Description)
 	if desc == "" {
-		desc = req.Name
+		desc = sanitizeLine(req.Name)
 	}
 	builder := strings.Builder{}
 	builder.WriteString("[Unit]\n")
 	builder.WriteString("Description=" + desc + "\n\n")
 	builder.WriteString("[Service]\n")
 	builder.WriteString("Type=simple\n")
-	if strings.TrimSpace(req.Workdir) != "" {
-		builder.WriteString("WorkingDirectory=" + strings.TrimSpace(req.Workdir) + "\n")
+	if workdir := sanitizeLine(strings.TrimSpace(req.Workdir)); workdir != "" {
+		builder.WriteString("WorkingDirectory=" + workdir + "\n")
 	}
-	if strings.TrimSpace(req.Exec) != "" {
-		builder.WriteString("ExecStart=" + strings.TrimSpace(req.Exec) + "\n")
+	if exec := sanitizeLine(strings.TrimSpace(req.Exec)); exec != "" {
+		builder.WriteString("ExecStart=" + exec + "\n")
 	}
-	if strings.TrimSpace(req.User) != "" {
-		builder.WriteString("User=" + strings.TrimSpace(req.User) + "\n")
+	if user := sanitizeLine(strings.TrimSpace(req.User)); user != "" {
+		builder.WriteString("User=" + user + "\n")
 	}
 	for _, env := range splitEnvLines(req.Env) {
 		builder.WriteString("Environment=" + env + "\n")
@@ -156,17 +188,18 @@ func renderSystemd(req CreateRequest) string {
 }
 
 func renderSysV(req CreateRequest) string {
-	desc := req.Description
+	desc := sanitizeLine(req.Description)
 	if desc == "" {
-		desc = req.Name
+		desc = sanitizeLine(req.Name)
 	}
-	workdir := strings.TrimSpace(req.Workdir)
+	name := sanitizeLine(req.Name)
+	workdir := sanitizeLine(strings.TrimSpace(req.Workdir))
 	if workdir == "" {
 		workdir = "/"
 	}
-	cmd := strings.TrimSpace(req.Exec)
+	cmd := sanitizeLine(strings.TrimSpace(req.Exec))
 	if cmd == "" {
-		cmd = req.Name
+		cmd = name
 	}
 	return fmt.Sprintf(`#!/bin/sh
 ### BEGIN INIT INFO
@@ -215,21 +248,22 @@ case "$1" in
 esac
 
 exit 0
-`, req.Name, desc, req.Name, cmd, workdir)
+`, name, desc, name, cmd, workdir)
 }
 
 func renderOpenRC(req CreateRequest) string {
-	desc := req.Description
+	desc := sanitizeLine(req.Description)
 	if desc == "" {
-		desc = req.Name
+		desc = sanitizeLine(req.Name)
 	}
-	workdir := strings.TrimSpace(req.Workdir)
+	name := sanitizeLine(req.Name)
+	workdir := sanitizeLine(strings.TrimSpace(req.Workdir))
 	if workdir == "" {
 		workdir = "/"
 	}
-	cmd := strings.TrimSpace(req.Exec)
+	cmd := sanitizeLine(strings.TrimSpace(req.Exec))
 	if cmd == "" {
-		cmd = req.Name
+		cmd = name
 	}
 	escaped := strings.ReplaceAll(cmd, "\"", "\\\"")
 	return fmt.Sprintf(`#!/sbin/openrc-run
@@ -241,25 +275,26 @@ command_args="-c \"%s\""
 command_background="yes"
 pidfile="/run/%s.pid"
 directory=%q
-`, req.Name, desc, escaped, req.Name, workdir)
+`, name, desc, escaped, name, workdir)
 }
 
 func renderSupervisor(req CreateRequest) string {
-	desc := req.Description
+	desc := sanitizeLine(req.Description)
 	if desc == "" {
-		desc = req.Name
+		desc = sanitizeLine(req.Name)
 	}
-	user := strings.TrimSpace(req.User)
+	name := sanitizeLine(req.Name)
+	user := sanitizeLine(strings.TrimSpace(req.User))
 	if user == "" {
 		user = "root"
 	}
-	workdir := strings.TrimSpace(req.Workdir)
+	workdir := sanitizeLine(strings.TrimSpace(req.Workdir))
 	if workdir == "" {
 		workdir = "/"
 	}
-	cmd := strings.TrimSpace(req.Exec)
+	cmd := sanitizeLine(strings.TrimSpace(req.Exec))
 	if cmd == "" {
-		cmd = req.Name
+		cmd = name
 	}
 	autostart := "false"
 	if req.Options.Autostart {
@@ -274,22 +309,23 @@ autorestart=true
 stdout_logfile=/var/log/%s.log
 stderr_logfile=/var/log/%s.err
 description=%s
-`, req.Name, cmd, workdir, user, autostart, req.Name, req.Name, desc)
+`, name, cmd, workdir, user, autostart, name, name, desc)
 }
 
 func renderPM2(req CreateRequest) (string, error) {
-	cmd := strings.TrimSpace(req.Exec)
+	name := sanitizeLine(req.Name)
+	cmd := sanitizeLine(strings.TrimSpace(req.Exec))
 	if cmd == "" {
-		cmd = req.Name
+		cmd = name
 	}
-	workdir := strings.TrimSpace(req.Workdir)
+	workdir := sanitizeLine(strings.TrimSpace(req.Workdir))
 	if workdir == "" {
 		workdir = "/"
 	}
 	payload := map[string]any{
 		"apps": []map[string]any{
 			{
-				"name":   req.Name,
+				"name":   name,
 				"script": cmd,
 				"cwd":    workdir,
 				"env":    parseEnvMap(req.Env),
@@ -307,7 +343,7 @@ func splitEnvLines(raw string) []string {
 	lines := strings.Split(raw, "\n")
 	out := make([]string, 0, len(lines))
 	for _, line := range lines {
-		value := strings.TrimSpace(line)
+		value := sanitizeLine(strings.TrimSpace(line))
 		if value == "" {
 			continue
 		}
@@ -320,10 +356,21 @@ func parseEnvMap(raw string) map[string]string {
 	envs := map[string]string{}
 	for _, line := range splitEnvLines(raw) {
 		if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
-			envs[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
+			key := sanitizeLine(strings.TrimSpace(parts[0]))
+			value := sanitizeLine(strings.TrimSpace(parts[1]))
+			if key == "" {
+				continue
+			}
+			envs[key] = value
 		}
 	}
 	return envs
+}
+
+func sanitizeLine(value string) string {
+	value = strings.ReplaceAll(value, "\r", "")
+	value = strings.ReplaceAll(value, "\n", "")
+	return value
 }
 
 func runCreateCommands(manager string, src ExecSource, req CreateRequest, path string) error {

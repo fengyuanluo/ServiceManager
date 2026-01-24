@@ -49,3 +49,40 @@ func TestCreateSystemdService(t *testing.T) {
 		t.Fatalf("unexpected start call: %s", calls[2])
 	}
 }
+
+func TestCreateServiceRejectsInvalidName(t *testing.T) {
+	dir := t.TempDir()
+	src := ExecSource{Run: func(name string, args ...string) ([]byte, error) {
+		return []byte("ok"), nil
+	}}
+	fs := FileSource{
+		WriteFile: os.WriteFile,
+		MkdirAll:  os.MkdirAll,
+		Chmod:     os.Chmod,
+	}
+	req := CreateRequest{
+		Name:    "../bad",
+		Exec:    "/usr/bin/bad",
+		Options: CreateOptions{},
+	}
+	err := CreateService("systemd", CreateSource{Exec: src, FS: fs, BaseDir: dir}, req)
+	if err == nil {
+		t.Fatalf("expected error for invalid name")
+	}
+}
+
+func TestRenderSystemdSanitizesLineBreaks(t *testing.T) {
+	req := CreateRequest{
+		Name:        "demo",
+		Description: "desc\nInjected",
+		Exec:        "/usr/bin/demo\r\nInjected",
+		User:        "root\nInjected",
+	}
+	out := renderSystemd(req)
+	if strings.Contains(out, "\nInjected") {
+		t.Fatalf("expected sanitized output, got %q", out)
+	}
+	if strings.Contains(out, "\r") {
+		t.Fatalf("expected no carriage returns, got %q", out)
+	}
+}

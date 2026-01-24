@@ -1,14 +1,16 @@
 package manager
 
+import "strings"
+
 func DetectManagers(env EnvInfo) []string {
 	out := []string{}
-	if env.Init == "systemd" {
+	initName := strings.ToLower(strings.TrimSpace(env.Init))
+	switch initName {
+	case "systemd":
 		out = append(out, "systemd")
-	}
-	if env.Init == "openrc" {
+	case "openrc":
 		out = append(out, "openrc")
-	}
-	if env.Distro != "unknown" {
+	case "init", "sysvinit":
 		out = append(out, "sysv")
 	}
 	return out

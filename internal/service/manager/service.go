@@ -292,8 +292,19 @@ func buildPM2Command(user string, args ...string) (commandSpec, error) {
 	if user == "" || user == "root" {
 		return commandSpec{Name: "pm2", Args: args}, nil
 	}
-	cmd := "pm2 " + strings.Join(args, " ")
+	escaped := make([]string, 0, len(args))
+	for _, arg := range args {
+		escaped = append(escaped, escapeShellArg(arg))
+	}
+	cmd := "pm2"
+	if len(escaped) > 0 {
+		cmd += " " + strings.Join(escaped, " ")
+	}
 	return commandSpec{Name: "su", Args: []string{"-l", user, "-c", cmd}}, nil
+}
+
+func escapeShellArg(arg string) string {
+	return "'" + strings.ReplaceAll(arg, "'", `'"'"'`) + "'"
 }
 
 func parseListByManager(manager string, out string) ([]ServiceSummary, error) {
