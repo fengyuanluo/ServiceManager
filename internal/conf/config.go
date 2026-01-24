@@ -1,8 +1,11 @@
 package conf
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/fengyuanluo/go-backend-template/internal/utils/log"
 	"github.com/spf13/viper"
@@ -22,10 +25,15 @@ type Database struct {
 	Path string `json:"path" mapstructure:"path"`
 }
 
+type Auth struct {
+	Secret string `json:"secret" mapstructure:"secret"`
+}
+
 type Config struct {
 	Server   Server   `mapstructure:"server"`
 	Log      Log      `mapstructure:"logging"`
 	Database Database `mapstructure:"database"`
+	Auth     Auth     `mapstructure:"auth"`
 }
 
 var AppConfig Config
@@ -52,6 +60,9 @@ func Load(path string) error {
 			if err := os.MkdirAll("data", 0755); err != nil {
 				log.Errorf("Failed to create data directory: %v", err)
 			}
+			if err := ensureAuthSecret(); err != nil {
+				return err
+			}
 			if err := viper.SafeWriteConfigAs("data/config.json"); err != nil {
 				log.Errorf("Failed to create default config: %v", err)
 			}
@@ -60,6 +71,9 @@ func Load(path string) error {
 		}
 	}
 
+	if err := ensureAuthSecret(); err != nil {
+		return err
+	}
 	if err := viper.Unmarshal(&AppConfig); err != nil {
 		return fmt.Errorf("unable to decode config into struct: %w", err)
 	}
@@ -72,4 +86,34 @@ func setDefaults() {
 	viper.SetDefault("database.type", "sqlite")
 	viper.SetDefault("database.path", "data/data.db")
 	viper.SetDefault("logging.level", "info")
+}
+
+func ensureAuthSecret() error {
+	secret := strings.TrimSpace(viper.GetString("auth.secret"))
+	if secret != "" {
+		return nil
+	}
+	generated, err := generateAuthSecret()
+	if err != nil {
+		return err
+	}
+	viper.Set("auth.secret", generated)
+	configPath := viper.ConfigFileUsed()
+	if configPath == "" {
+		return nil
+	}
+	if _, err := os.Stat(configPath); err == nil {
+		if err := viper.WriteConfig(); err != nil {
+			log.Warnf("Failed to persist auth secret to config: %v", err)
+		}
+	}
+	return nil
+}
+
+func generateAuthSecret() (string, error) {
+	raw := make([]byte, 32)
+	if _, err := rand.Read(raw); err != nil {
+		return "", err
+	}
+	return base64.RawStdEncoding.EncodeToString(raw), nil
 }

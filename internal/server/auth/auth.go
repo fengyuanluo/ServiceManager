@@ -1,12 +1,21 @@
 package auth
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/fengyuanluo/go-backend-template/internal/conf"
-	"github.com/fengyuanluo/go-backend-template/internal/op"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+var secretProvider = func() (string, error) {
+	secret := strings.TrimSpace(conf.AppConfig.Auth.Secret)
+	if secret == "" {
+		return "", errors.New("auth secret is empty")
+	}
+	return secret, nil
+}
 
 func GenerateToken(expiresMin int) (string, string, error) {
 	now := time.Now()
@@ -22,8 +31,10 @@ func GenerateToken(expiresMin int) (string, string, error) {
 	} else if expiresMin == -1 {
 		claims.ExpiresAt = jwt.NewNumericDate(now.Add(time.Duration(30) * 24 * time.Hour))
 	}
-	user := op.UserGet()
-	secret := user.Username + user.Password
+	secret, err := secretProvider()
+	if err != nil {
+		return "", "", err
+	}
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
 	if err != nil {
 		return "", "", err
@@ -32,9 +43,14 @@ func GenerateToken(expiresMin int) (string, string, error) {
 }
 
 func VerifyToken(token string) bool {
+	secret, err := secretProvider()
+	if err != nil {
+		return false
+	}
 	jwtToken, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
-		user := op.UserGet()
-		secret := user.Username + user.Password
+		if token.Method == nil || token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, errors.New("unexpected signing method")
+		}
 		return []byte(secret), nil
 	})
 	if err != nil || !jwtToken.Valid {
