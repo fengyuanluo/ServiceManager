@@ -1,25 +1,24 @@
-# Task Plan: 逐项修复审阅问题
+# Task Plan: 全量代码审阅与报告
 
 ## Goal
-按 report.md 顺序建立任务列表并逐项高质量修复，确保测试通过。
+按功能模块逐文件审阅前后端代码，并将发现的问题归类写入 report.md 对应模块。
 
 ## Phases
-- [x] Phase 1: 规划与准备（确认范围、创建计划/笔记文件）
-- [x] Phase 2: 任务分解（按模块拆分修复清单与验证点）
-- [x] Phase 3: 实施修复（逐项修复 + 测试）
-- [x] Phase 4: 回顾交付（汇总变更与验证结果）
+- [x] Phase 1: 规划与准备（创建计划/笔记文件，确认模块划分）
+- [x] Phase 2: 代码梳理（按模块列出文件清单）
+- [x] Phase 3: 逐文件审阅（记录问题与证据）
+- [x] Phase 4: 生成 report.md 并回顾
 
 ## Key Questions
-1. 哪些修复需要 API/前端联动调整以保证行为一致？
-2. 是否需要在修复过程中补充/调整测试？
+1. 前后端的模块边界如何划分，是否有共享/交叉部分？
+2. 每个模块的关键风险点（安全、性能、可维护性）有哪些？
 
 ## Decisions Made
-- 按 report.md 顺序推进修复，逐项完成并验证。
+- 使用前后端/业务模块作为主分组，逐文件记录问题到 report.md。
 
 ## Errors Encountered
-- 使用 here-doc 写入包含反引号内容时触发命令替换，已改用 apply_patch 重新生成设计文档
-- 静态资源 fallback 使用 /index.html 触发 301 重定向，改为指向目录路径以返回 index 内容
-- create.go 引入 sanitizeLine 后出现未使用变量，已清理后通过构建
+- `rg` 命令不存在，后续改用 `find`/`grep` 等替代方案
+- 生成 `report.md` 的 here-doc 命令因引号冲突失败，改用 Python 写入
 
 ## Status
-**Currently in Phase 4** - 已完成全部修复与回归验证，整理交付说明
+**Currently in Phase 4** - report.md 已生成，等待交付
